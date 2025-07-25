@@ -1,0 +1,91 @@
+🎯 🔷 1. Query all create, update, delete operations
+
+fields @timestamp, @message
+| filter @message like /"\"verb\":\"create\""/ or @message like /"\"verb\":\"update\""/ or @message like /"\"verb\":\"delete\""/
+| sort @timestamp desc
+| limit 20
+
+🎯 🔷 2. List failed authentication attempts
+fields @timestamp, @message
+| filter @message like /"\"responseStatus\":{\"metadata\":{},\"code\":401"/
+| sort @timestamp desc
+| limit 20
+
+🎯 🔷 3. Extract user and verb for RBAC changes
+fields @timestamp,
+       user = parse_json(@message).user.username,
+       verb = parse_json(@message).verb,
+       resource = parse_json(@message).objectRef.resource
+| filter resource like /rolebinding/ or resource like /clusterrolebinding/ or resource like /role/ or resource like /clusterrole/
+| sort @timestamp desc
+| limit 20
+
+🎯 🔷 4. Find who deleted pods in the last 24 hours
+fields @timestamp,
+       user = parse_json(@message).user.username,
+       namespace = parse_json(@message).objectRef.namespace,
+       pod = parse_json(@message).objectRef.name
+| filter parse_json(@message).verb = "delete"
+  and parse_json(@message).objectRef.resource = "pods"
+| sort @timestamp desc
+| limit 20
+
+🎯 🔷 5. Count API calls per user (Top talkers)
+fields user = parse_json(@message).user.username
+| stats count() as api_calls by user
+| sort api_calls desc
+| limit 10
+
+🎯 🔷 6. List all secrets accessed (get/list) for compliance audit
+fields @timestamp,
+       user = parse_json(@message).user.username,
+       verb = parse_json(@message).verb,
+       secret = parse_json(@message).objectRef.name
+| filter parse_json(@message).objectRef.resource = "secrets"
+  and (verb = "get" or verb = "list")
+| sort @timestamp desc
+| limit 20
+
+🎯 🔷 7. Monitor creation of ClusterRoleBindings (potential privilege escalation)
+fields @timestamp,
+       user = parse_json(@message).user.username,
+       verb = parse_json(@message).verb,
+       crb = parse_json(@message).objectRef.name
+| filter parse_json(@message).objectRef.resource = "clusterrolebindings"
+  and verb = "create"
+| sort @timestamp desc
+| limit 20
+
+#####################################################################################################
+Step-1: Logs
+{
+  "kind": "Event",
+  "apiVersion": "audit.k8s.io/v1",
+  "level": "RequestResponse",
+  "timestamp": "2025-07-25T08:00:00Z",
+  "user": {
+    "username": "admin"
+  },
+  "verb": "delete",
+  "objectRef": {
+    "resource": "pods",
+    "namespace": "default",
+    "name": "nginx"
+  }
+}
+
+step-2: Query
+fields @timestamp,
+       user = parse_json(@message).user.username,
+       verb = parse_json(@message).verb,
+       resource = parse_json(@message).objectRef.resource,
+       namespace = parse_json(@message).objectRef.namespace
+| filter verb = "delete"
+| sort @timestamp desc
+| limit 3
+
+Step"3 Oytput
+| @timestamp           | user  | verb   | resource | namespace |
+| -------------------- | ----- | ------ | -------- | --------- |
+| 2025-07-25T08:00:00Z | admin | delete | pods     | default   |
+
