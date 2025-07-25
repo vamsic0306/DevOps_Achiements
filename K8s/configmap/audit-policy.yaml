@@ -1,0 +1,43 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+# Default rule for requests not covered by other rules
+rules:
+  # 🔷 1. Log all critical changes with full request/response
+  - level: RequestResponse
+    verbs: ["create", "update", "patch", "delete"]
+    resources:
+    - group: ""  # core API group
+      resources: ["pods", "services", "configmaps", "secrets"]
+    - group: "apps"
+      resources: ["deployments", "statefulsets", "daemonsets"]
+    - group: "batch"
+      resources: ["jobs", "cronjobs"]
+
+  # 🔷 2. Log all changes to RBAC with full request/response
+  - level: RequestResponse
+    verbs: ["create", "update", "patch", "delete"]
+    resources:
+    - group: "rbac.authorization.k8s.io"
+      resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+
+  # 🔷 3. Log auth-related resources (ServiceAccounts, Secrets) with metadata only for read
+  - level: Metadata
+    verbs: ["get", "list", "watch"]
+    resources:
+    - group: ""
+      resources: ["serviceaccounts", "secrets"]
+
+  # 🔷 4. Log all requests to the kube-system namespace with request body
+  - level: Request
+    namespaces: ["kube-system"]
+
+  # 🔷 5. Log all requests from system:admin users with request body
+  - level: Request
+    users: ["system:admin"]
+
+  # 🔷 6. Log all requests from system components at Metadata level
+  - level: Metadata
+    userGroups: ["system:serviceaccounts", "system:nodes", "system:masters"]
+
+  # 🔷 7. Log all other requests at Metadata level
+  - level: Metadata
