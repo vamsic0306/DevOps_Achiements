@@ -1,0 +1,24 @@
+/etc/kubernetes/manifests/kube-apiserver.yaml
+
+spec:
+  containers:
+  - name: kube-apiserver
+    command:
+    - kube-apiserver
+    - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
+    - --audit-log-path=/var/log/kubernetes/audit.log
+    ...
+    volumeMounts:
+    - mountPath: /etc/kubernetes/audit-policy.yaml
+      name: audit-policy
+      readOnly: true
+    - mountPath: /var/log/kubernetes
+      name: audit-log
+  volumes:
+  - name: audit-policy
+    hostPath:
+      path: /etc/kubernetes/audit-policy.yaml
+  - name: audit-log
+    hostPath:
+      path: /var/log/kubernetes
+      type: DirectoryOrCreate
