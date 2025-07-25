@@ -1,0 +1,11 @@
+aws eks update-cluster-config \
+  --region <region> \
+  --name <cluster-name> \
+  --logging '{
+    "clusterLogging": [
+      {
+        "types": ["api","audit","authenticator"],
+        "enabled": true
+      }
+    ]
+  }'
