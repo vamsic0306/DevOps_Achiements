@@ -1,0 +1,20 @@
+#!/bin/bash
+
+CLUSTER_NAME="my-cluster"
+NODEGROUP_NAME="my-nodegroup"
+LAUNCH_TEMPLATE_NAME="my-launch-template"
+NEW_TEMPLATE_VERSION="2" # Change this to the version you want to roll out
+
+echo "Updating node group with new launch template version..."
+
+aws eks update-nodegroup-version \
+  --cluster-name "$CLUSTER_NAME" \
+  --nodegroup-name "$NODEGROUP_NAME" \
+  --launch-template name="$LAUNCH_TEMPLATE_NAME",version="$NEW_TEMPLATE_VERSION"
+
+echo "Waiting for rollout to complete..."
+aws eks wait nodegroup-active \
+  --cluster-name "$CLUSTER_NAME" \
+  --nodegroup-name "$NODEGROUP_NAME"
+
+echo "✅ Node group updated to launch template version $NEW_TEMPLATE_VERSION"
