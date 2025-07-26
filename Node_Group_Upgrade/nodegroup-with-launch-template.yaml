@@ -1,0 +1,20 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: my-cluster
+  region: us-east-1
+
+nodeGroups:
+  - name: ng-new-template
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 5
+    launchTemplate:
+      name: my-launch-template
+      version: "2"
+    updateConfig:
+      maxUnavailable: 1
+    tags:
+      nodegroup-role: app
